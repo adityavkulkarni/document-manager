@@ -1,0 +1,123 @@
+import os
+from flask import Blueprint, request, jsonify, current_app, abort, send_file
+from sqlalchemy import and_
+from sqlalchemy.exc import SQLAlchemyError
+from .. import db, file_manager
+from ..models.documents import Attachment, AttachmentSchema, PDF
+import json
+
+attachment_bp = Blueprint('attachments', __name__)
+attachment_schema = AttachmentSchema()
+
+@attachment_bp.route('/<int:pdf_id>/', methods=['POST'])
+def upload_attachment(pdf_id):
+    current_app.logger.info(f"Upload request received for PDF ID: {pdf_id}")
+    pdf = PDF.query.get_or_404(pdf_id)
+    if 'file' not in request.files:
+        current_app.logger.warning("No file part in request")
+        abort(400, 'No file part')
+    file = request.files['file']
+    if file.filename == '':
+        current_app.logger.warning("No selected file in upload")
+        abort(400, 'No selected file')
+    if not '.' in file.filename or file.filename.rsplit('.', 1)[1].lower() not in current_app.config['ALLOWED_EXTENSIONS']:
+        current_app.logger.warning(f"Unsupported file type attempted: {file.filename}")
+        abort(400, 'Unsupported file type')
+
+    user_meta = request.form.get('metadata')
+    try:
+        user_meta = json.loads(user_meta) if user_meta else {}
+    except json.JSONDecodeError:
+        current_app.logger.error("Invalid JSON in metadata")
+        abort(400, 'Metadata must be valid JSON')
+
+    stored_filename = file.filename
+    tmp_path = os.path.join(current_app.config['TMP_FOLDER'], stored_filename)
+    file.save(tmp_path)
+    current_app.logger.info(f"File saved temporarily at {tmp_path}")
+
+    storage_dir = f"{current_app.config['PARENT_FOLDER']}/{pdf.original_filename.split('.')[0]}/attachments"
+    file_manager.create_directory(path=storage_dir)
+    file_manager.upload_file(local_path=tmp_path, storage_path=f"{storage_dir}/{stored_filename}")
+    current_app.logger.info(f"File uploaded to storage: {storage_dir}/{stored_filename}")
+
+    attachment = Attachment(
+        pdf_id=pdf.id,
+        original_filename=file.filename,
+        stored_path=f"{storage_dir}/{stored_filename}",
+        sys_metadata=user_meta
+    )
+    try:
+        query = Attachment.query.filter(
+            and_(
+                Attachment.original_filename.ilike(f"%{stored_filename}%"),
+                Attachment.pdf_id == attachment.pdf_id
+            )
+        )
+        attachments = query.all()
+        if len(attachments) == 0:
+            db.session.add(attachment)
+            current_app.logger.info(f"New attachment record created for PDF ID {pdf_id}: {stored_filename}")
+        else:
+            current_app.logger.info(f"Existing attachment found for PDF ID {pdf_id}, deleting old record.")
+            delete_attachment(attachment_id=attachments[0].id)
+        db.session.commit()
+        current_app.logger.info(f"Attachment committed to database for PDF ID {pdf_id}")
+    except Exception as e:
+        current_app.logger.error(f"Database error during attachment upload: {e}")
+        db.session.rollback()
+        abort(500, str(e))
+    os.remove(tmp_path)
+    current_app.logger.info(f"Temporary file removed: {tmp_path}")
+    return jsonify(attachment_schema.dump(attachment)), 201
+
+@attachment_bp.route('/', methods=['GET'])
+def list_attachments():
+    name = request.args.get('name')
+    meta_key = request.args.get('meta_key')
+    meta_value = request.args.get('meta_value')
+    current_app.logger.info(f"Listing attachments with filters - name: {name}, meta_key: {meta_key}, meta_value: {meta_value}")
+
+    query = Attachment.query
+    if name:
+        query = query.filter(Attachment.original_filename.ilike(f"%{name}%"))
+    if meta_key and meta_value:
+        query = query.filter(Attachment.sys_metadata[meta_key].astext == meta_value)
+
+    attachments = query.all()
+    current_app.logger.info(f"Found {len(attachments)} attachments matching filters")
+    return jsonify(attachment_schema.dump(attachments, many=True))
+
+@attachment_bp.route('/download/<int:attachment_id>', methods=['GET'])
+def download_pdf(attachment_id):
+    current_app.logger.info(f"Download requested for attachment ID: {attachment_id}")
+    attachment = Attachment.query.get_or_404(attachment_id)
+    tmp_path = os.path.join(current_app.config['TMP_FOLDER'], attachment.original_filename)
+    file_manager.download_file(src_path=attachment.stored_path, local_path=tmp_path)
+    current_app.logger.info(f"Attachment downloaded to temporary path: {tmp_path}")
+    return send_file(tmp_path, as_attachment=True, download_name=attachment.original_filename)
+
+@attachment_bp.route('/<int:attachment_id>', methods=['GET'])
+def get_attachment(attachment_id):
+    current_app.logger.info(f"Fetching metadata for attachment ID: {attachment_id}")
+    attachment = Attachment.query.get_or_404(attachment_id)
+    return jsonify(attachment_schema.dump(attachment))
+
+@attachment_bp.route('/<int:attachment_id>', methods=['DELETE'])
+def delete_attachment(attachment_id):
+    current_app.logger.info(f"Delete requested for attachment ID: {attachment_id}")
+    attachment = Attachment.query.get_or_404(attachment_id)
+    try:
+        file_manager.delete_directory(attachment.stored_path)
+        current_app.logger.info(f"Attachment file deleted from storage: {attachment.stored_path}")
+        db.session.delete(attachment)
+        db.session.commit()
+        current_app.logger.info(f"Attachment record deleted from database: {attachment_id}")
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        current_app.logger.error(f"SQLAlchemy error during attachment deletion: {e}")
+        abort(500, str(e))
+    except Exception as e:
+        current_app.logger.error(f"File deletion failed for attachment {attachment_id}: {e}")
+        abort(500, f"File deletion failed: {e}")
+    return jsonify({'message': 'PDF deleted successfully'}), 200
