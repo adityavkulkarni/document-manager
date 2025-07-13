@@ -25,7 +25,7 @@ class AppLogger:
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
 
-        formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s'+prefix)
+        formatter = logging.Formatter('%(asctime)s | %(levelname)s'+prefix+'%(message)s')
 
         # File handler with rotation
         file_handler = RotatingFileHandler(
