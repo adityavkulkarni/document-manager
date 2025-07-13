@@ -2,7 +2,6 @@ import logging
 import os
 import sys
 from logging.handlers import RotatingFileHandler
-from sys import prefix
 
 from ..config import Config
 

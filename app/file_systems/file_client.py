@@ -1,8 +1,7 @@
 import os
 import shutil
-from sys import prefix
 
-from app.file_systems.logger import AppLogger
+from .logger import AppLogger
 
 class FileManager:
     def __init__(self, base_path=None, user=None):

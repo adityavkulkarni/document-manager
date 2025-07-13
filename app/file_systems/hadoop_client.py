@@ -1,6 +1,6 @@
 from hdfs import InsecureClient
 
-from app.file_systems.logger import AppLogger
+from .logger import AppLogger
 
 
 class HDFSManager:
