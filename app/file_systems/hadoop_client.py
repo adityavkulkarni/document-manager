@@ -11,7 +11,7 @@ class HDFSManager:
         :param user: HDFS user (optional)
         """
         self.client = InsecureClient(namenode_url, user=user)
-        self.logger = AppLogger().get_logger()
+        self.logger = AppLogger(prefix=" | HDFS | ").get_logger()
         self.logger.info(f"HDFSManager connected to: {namenode_url}")
 
     def create_directory(self, path):

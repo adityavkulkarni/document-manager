@@ -2,12 +2,13 @@ import logging
 import os
 import sys
 from logging.handlers import RotatingFileHandler
+from sys import prefix
 
 from ..config import Config
 
 
 class AppLogger:
-    def __init__(self, name='AppLogger', log_dir=Config.LOG_DIRECTORY, log_file='app.log', level=logging.INFO):
+    def __init__(self, name='AppLogger', log_dir=Config.LOG_DIRECTORY, log_file='app.log', level=logging.INFO, prefix=""):
         """
         Initialize the logger.
         :param name: Name of the logger.
@@ -17,14 +18,14 @@ class AppLogger:
         """
         self.logger = logging.getLogger(name)
         self.logger.setLevel(level)
-        self._setup_handlers(log_dir, log_file, level)
+        self._setup_handlers(log_dir, log_file, level, prefix)
 
-    def _setup_handlers(self, log_dir, log_file, level):
+    def _setup_handlers(self, log_dir, log_file, level, prefix):
         # Ensure log directory exists
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
 
-        formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s')
+        formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s'+prefix)
 
         # File handler with rotation
         file_handler = RotatingFileHandler(

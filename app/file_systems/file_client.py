@@ -1,5 +1,6 @@
 import os
 import shutil
+from sys import prefix
 
 from app.file_systems.logger import AppLogger
 
@@ -11,8 +12,8 @@ class FileManager:
         :param user: User parameter for compatibility (not used)
         """
         self.base_path = base_path if base_path else ""
-        self.logger = AppLogger().get_logger()
-        self.logger.info(f"FileManager initialized with base_path: '{self.base_path}'")
+        self.logger = AppLogger(prefix=" | LocalFS | ").get_logger()
+        self.logger.info(f"LocalFS | FileManager initialized with base_path: '{self.base_path}'")
 
     def _full_path(self, path):
         if os.path.isabs(path):
