@@ -7,9 +7,9 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'change-me')
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///document_manager.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    PARENT__DIRECTORY = os.getenv('PARENT_DIRECTORY', 'uploads')
-    STATIC__DIRECTORY = os.path.join(os.getcwd(), "app", "static")
-    TMP__DIRECTORY = os.path.join(os.getcwd(), os.getenv('TMP_DIRECTORY', 'tmp'))
+    PARENT_DIRECTORY = os.getenv('PARENT_DIRECTORY', 'uploads')
+    STATIC_DIRECTORY = os.path.join(os.getcwd(), "app", "static")
+    TMP_DIRECTORY = os.path.join(os.getcwd(), os.getenv('TMP_DIRECTORY', 'tmp'))
     LOG_DIRECTORY = os.path.join(os.getcwd(), 'logs')
     MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50 MB limit
     ALLOWED_EXTENSIONS = {'pdf', 'jpg', 'jpeg', 'png'}
