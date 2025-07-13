@@ -32,11 +32,11 @@ def upload_pdf():
         abort(400, 'Metadata must be valid JSON')
 
     stored_filename = file.filename
-    tmp_path = os.path.join(current_app.config['TMP_FOLDER'], stored_filename)
+    tmp_path = os.path.join(current_app.config['TMP__DIRECTORY'], stored_filename)
     file.save(tmp_path)
     current_app.logger.info(f"PDF_BP | File saved temporarily at {tmp_path}")
 
-    storage_dir = f"{current_app.config['PARENT_FOLDER']}/{file.filename.split('.')[0]}"
+    storage_dir = f"{current_app.config['PARENT__DIRECTORY']}/{file.filename.split('.')[0]}"
     file_manager.create_directory(path=storage_dir)
     file_manager.upload_file(local_path=tmp_path, storage_path=f"{storage_dir}/{stored_filename}")
     current_app.logger.info(f"PDF_BP | File uploaded to storage: {storage_dir}/{stored_filename}")
@@ -86,7 +86,7 @@ def list_pdfs():
 def download_pdf(pdf_id):
     current_app.logger.info(f"PDF_BP | Download requested for PDF ID: {pdf_id}")
     pdf = PDF.query.get_or_404(pdf_id)
-    tmp_path = os.path.join(current_app.config['TMP_FOLDER'], pdf.original_filename)
+    tmp_path = os.path.join(current_app.config['TMP__DIRECTORY'], pdf.original_filename)
     file_manager.download_file(src_path=pdf.stored_path, local_path=tmp_path)
     current_app.logger.info(f"PDF_BP | PDF downloaded to temporary path: {tmp_path}")
     return send_file(tmp_path, as_attachment=True, download_name=pdf.original_filename)
@@ -102,7 +102,7 @@ def delete_pdf(pdf_id):
     current_app.logger.info(f"PDF_BP | Delete requested for PDF ID: {pdf_id}")
     pdf = PDF.query.get_or_404(pdf_id)
     try:
-        storage_dir = f"{current_app.config['PARENT_FOLDER']}/{pdf.original_filename.split('.')[0]}"
+        storage_dir = f"{current_app.config['PARENT__DIRECTORY']}/{pdf.original_filename.split('.')[0]}"
         file_manager.delete_directory(storage_dir)
         current_app.logger.info(f"PDF_BP | PDF file deleted from storage: {storage_dir}")
         db.session.delete(pdf)
