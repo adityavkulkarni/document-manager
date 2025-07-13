@@ -32,12 +32,12 @@ app.logger.addHandler(stdout_handler)
 
 app.logger.info('INIT | Document Manager startup')
 app.logger.info(f'INIT | Creating base directories')
-if not os.path.exists(Config.TMP__DIRECTORY):
-    os.mkdir(Config.TMP__DIRECTORY)
-    app.logger.info(f'INIT | Created temporary folder: {Config.TMP__DIRECTORY}')
-if not os.path.exists(Config.STATIC__DIRECTORY):
-    os.mkdir(Config.STATIC__DIRECTORY)
-    app.logger.info(f'INIT | Created static folder: {Config.STATIC__DIRECTORY}')
+if not os.path.exists(Config.TMP_DIRECTORY):
+    os.mkdir(Config.TMP_DIRECTORY)
+    app.logger.info(f'INIT | Created temporary folder: {Config.TMP_DIRECTORY}')
+if not os.path.exists(Config.STATIC_DIRECTORY):
+    os.mkdir(Config.STATIC_DIRECTORY)
+    app.logger.info(f'INIT | Created static folder: {Config.STATIC_DIRECTORY}')
 
 
 db = SQLAlchemy()
@@ -49,7 +49,7 @@ else:
     file_manager = FileManager()
 
 try:
-    file_manager.create_directory(path=Config.PARENT__DIRECTORY)
+    file_manager.create_directory(path=Config.PARENT_DIRECTORY)
 except Exception as e:
     app.logger.error(f'INIT | Error creating parent folder in file manager: {e}')
     raise e

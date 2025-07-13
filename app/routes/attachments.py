@@ -32,11 +32,11 @@ def upload_attachment(pdf_id):
         abort(400, 'Metadata must be valid JSON')
 
     stored_filename = file.filename
-    tmp_path = os.path.join(current_app.config['TMP__DIRECTORY'], stored_filename)
+    tmp_path = os.path.join(current_app.config['TMP_DIRECTORY'], stored_filename)
     file.save(tmp_path)
     current_app.logger.info(f"ATTACHMENT_BP | File saved temporarily at {tmp_path}")
 
-    storage_dir = f"{current_app.config['PARENT__DIRECTORY']}/{pdf.original_filename.split('.')[0]}/attachments"
+    storage_dir = f"{current_app.config['PARENT_DIRECTORY']}/{pdf.original_filename.split('.')[0]}/attachments"
     file_manager.create_directory(path=storage_dir)
     file_manager.upload_file(local_path=tmp_path, storage_path=f"{storage_dir}/{stored_filename}")
     current_app.logger.info(f"ATTACHMENT_BP | File uploaded to storage: {storage_dir}/{stored_filename}")
@@ -92,7 +92,7 @@ def list_attachments():
 def download_pdf(attachment_id):
     current_app.logger.info(f"ATTACHMENT_BP | Download requested for attachment ID: {attachment_id}")
     attachment = Attachment.query.get_or_404(attachment_id)
-    tmp_path = os.path.join(current_app.config['TMP__DIRECTORY'], attachment.original_filename)
+    tmp_path = os.path.join(current_app.config['TMP_DIRECTORY'], attachment.original_filename)
     file_manager.download_file(src_path=attachment.stored_path, local_path=tmp_path)
     current_app.logger.info(f"ATTACHMENT_BP | Attachment downloaded to temporary path: {tmp_path}")
     return send_file(tmp_path, as_attachment=True, download_name=attachment.original_filename)
