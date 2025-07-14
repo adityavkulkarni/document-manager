@@ -50,7 +50,7 @@ def upload_attachment(pdf_id):
     try:
         query = Attachment.query.filter(
             and_(
-                Attachment.original_filename.ilike(f"%{stored_filename}%"),
+                Attachment.original_filename.ilike(f"%{file.filename}%"),
                 Attachment.pdf_id == attachment.pdf_id
             )
         )
