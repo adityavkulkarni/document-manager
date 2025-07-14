@@ -40,7 +40,7 @@ def upload_attachment(pdf_id):
         query = Attachment.query.filter(
             and_(
                 Attachment.original_filename.ilike(f"%{file.filename}%"),
-                Attachment.pdf_id == attachment.pdf_id
+                Attachment.pdf_id == pdf.id
             )
         )
         attachments = query.all()
