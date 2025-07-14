@@ -36,11 +36,6 @@ def upload_attachment(pdf_id):
     file.save(tmp_path)
     current_app.logger.info(f"ATTACHMENT_BP | File saved temporarily at {tmp_path}")
 
-    storage_dir = f"{current_app.config['PARENT_DIRECTORY']}/{pdf.original_filename.split('.')[0]}/attachments"
-    file_manager.create_directory(path=storage_dir)
-    file_manager.upload_file(local_path=tmp_path, storage_path=f"{storage_dir}/{stored_filename}")
-    current_app.logger.info(f"ATTACHMENT_BP | File uploaded to storage: {storage_dir}/{stored_filename}")
-
     attachment = Attachment(
         pdf_id=pdf.id,
         original_filename=file.filename,
@@ -55,15 +50,18 @@ def upload_attachment(pdf_id):
             )
         )
         attachments = query.all()
-        if len(attachments) == 0:
-            db.session.add(attachment)
-            current_app.logger.info(f"ATTACHMENT_BP | New attachment record created for PDF ID {pdf_id}: {stored_filename}")
-        else:
+        if len(attachments) != 0:
             current_app.logger.info(f"ATTACHMENT_BP | Existing attachment found for PDF ID {pdf_id}, deleting old record.")
             delete_attachment(attachment_id=attachments[0].id)
-            db.session.add(attachment)
+        db.session.add(attachment)
+        current_app.logger.info(f"ATTACHMENT_BP | New attachment record created for PDF ID {pdf_id}: {stored_filename}")
         db.session.commit()
         current_app.logger.info(f"ATTACHMENT_BP | Attachment committed to database for PDF ID {pdf_id}")
+        storage_dir = f"{current_app.config['PARENT_DIRECTORY']}/{pdf.original_filename.split('.')[0]}/attachments"
+        file_manager.create_directory(path=storage_dir)
+        file_manager.upload_file(local_path=tmp_path, storage_path=f"{storage_dir}/{stored_filename}")
+        current_app.logger.info(f"ATTACHMENT_BP | File uploaded to storage: {storage_dir}/{stored_filename}")
+
     except Exception as e:
         current_app.logger.error(f"ATTACHMENT_BP | Database error during attachment upload: {e}")
         db.session.rollback()
