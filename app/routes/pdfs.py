@@ -36,22 +36,22 @@ def upload_pdf():
     file.save(tmp_path)
     current_app.logger.info(f"PDF_BP | File saved temporarily at {tmp_path}")
 
-    pdf = PDF(
-        original_filename=file.filename,
-        stored_path=f"{storage_dir}/{stored_filename}",
-        sys_metadata=user_meta
-    )
     try:
         query = PDF.query.filter(PDF.original_filename.ilike(f"%{file.filename}%"))
         pdfs = query.all()
         if len(pdfs) != 0:
             current_app.logger.info(f"PDF_BP | Existing PDF found, deleting old record for: {stored_filename}")
             delete_pdf(pdf_id=pdfs[0].id)
+        storage_dir = f"{current_app.config['PARENT_DIRECTORY']}/{file.filename.split('.')[0]}"
+        pdf = PDF(
+            original_filename=file.filename,
+            stored_path=f"{storage_dir}/{stored_filename}",
+            sys_metadata=user_meta
+        )
         db.session.add(pdf)
         current_app.logger.info(f"PDF_BP | New PDF record created: {stored_filename}")
         db.session.commit()
         current_app.logger.info(f"PDF_BP | PDF committed to database: {stored_filename}")
-        storage_dir = f"{current_app.config['PARENT_DIRECTORY']}/{file.filename.split('.')[0]}"
         file_manager.create_directory(path=storage_dir)
         file_manager.upload_file(local_path=tmp_path, storage_path=f"{storage_dir}/{stored_filename}")
         current_app.logger.info(f"PDF_BP | File uploaded to storage: {storage_dir}/{stored_filename}")

@@ -36,12 +36,6 @@ def upload_attachment(pdf_id):
     file.save(tmp_path)
     current_app.logger.info(f"ATTACHMENT_BP | File saved temporarily at {tmp_path}")
 
-    attachment = Attachment(
-        pdf_id=pdf.id,
-        original_filename=file.filename,
-        stored_path=f"{storage_dir}/{stored_filename}",
-        sys_metadata=user_meta
-    )
     try:
         query = Attachment.query.filter(
             and_(
@@ -53,11 +47,17 @@ def upload_attachment(pdf_id):
         if len(attachments) != 0:
             current_app.logger.info(f"ATTACHMENT_BP | Existing attachment found for PDF ID {pdf_id}, deleting old record.")
             delete_attachment(attachment_id=attachments[0].id)
+        storage_dir = f"{current_app.config['PARENT_DIRECTORY']}/{pdf.original_filename.split('.')[0]}/attachments"
+        attachment = Attachment(
+            pdf_id=pdf.id,
+            original_filename=file.filename,
+            stored_path=f"{storage_dir}/{stored_filename}",
+            sys_metadata=user_meta
+        )
         db.session.add(attachment)
         current_app.logger.info(f"ATTACHMENT_BP | New attachment record created for PDF ID {pdf_id}: {stored_filename}")
         db.session.commit()
         current_app.logger.info(f"ATTACHMENT_BP | Attachment committed to database for PDF ID {pdf_id}")
-        storage_dir = f"{current_app.config['PARENT_DIRECTORY']}/{pdf.original_filename.split('.')[0]}/attachments"
         file_manager.create_directory(path=storage_dir)
         file_manager.upload_file(local_path=tmp_path, storage_path=f"{storage_dir}/{stored_filename}")
         current_app.logger.info(f"ATTACHMENT_BP | File uploaded to storage: {storage_dir}/{stored_filename}")
