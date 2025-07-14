@@ -61,6 +61,7 @@ def upload_attachment(pdf_id):
         else:
             current_app.logger.info(f"ATTACHMENT_BP | Existing attachment found for PDF ID {pdf_id}, deleting old record.")
             delete_attachment(attachment_id=attachments[0].id)
+            db.session.add(attachment)
         db.session.commit()
         current_app.logger.info(f"ATTACHMENT_BP | Attachment committed to database for PDF ID {pdf_id}")
     except Exception as e:

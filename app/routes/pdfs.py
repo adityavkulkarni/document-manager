@@ -47,7 +47,7 @@ def upload_pdf():
         sys_metadata=user_meta
     )
     try:
-        query = PDF.query.filter(PDF.original_filename.ilike(f"%{stored_filename}%"))
+        query = PDF.query.filter(PDF.original_filename.ilike(f"%{file.filename}%"))
         pdfs = query.all()
         if len(pdfs) == 0:
             db.session.add(pdf)
@@ -55,6 +55,7 @@ def upload_pdf():
         else:
             current_app.logger.info(f"PDF_BP | Existing PDF found, deleting old record for: {stored_filename}")
             delete_pdf(pdf_id=pdfs[0].id)
+            db.session.add(pdf)
         db.session.commit()
         current_app.logger.info(f"PDF_BP | PDF committed to database: {stored_filename}")
     except SQLAlchemyError as e:
