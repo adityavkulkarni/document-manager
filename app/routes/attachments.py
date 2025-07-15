@@ -72,12 +72,15 @@ def upload_attachment(pdf_id):
 
 @attachment_bp.route('/', methods=['GET'])
 def list_attachments():
+    pdf_id = request.args.get('pdf_id')
     name = request.args.get('name')
     meta_key = request.args.get('meta_key')
     meta_value = request.args.get('meta_value')
     current_app.logger.info(f"ATTACHMENT_BP | Listing attachments with filters - name: {name}, meta_key: {meta_key}, meta_value: {meta_value}")
 
     query = Attachment.query
+    if pdf_id is not None:
+        query = query.filter(Attachment.pdf_id == pdf_id)
     if name:
         query = query.filter(Attachment.original_filename.ilike(f"%{name}%"))
     if meta_key and meta_value:
